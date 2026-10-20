@@ -124,7 +124,7 @@ def fallback(url, key, found, q="best", pre=None):
         hdr = {"User-Agent": UA, "Referer": ref}
         try:
             if ".m3u8" in media.lower():
-                opts = ydl_opts(outtmpl=os.path.join(CACHE, key + ".%(ext)s"), format=("b[height<=%s]/bv*[height<=%s]+ba/b/bv*+ba" % (q, q)) if q.isdigit() else "b/bv*+ba",
+                opts = ydl_opts(outtmpl=os.path.join(CACHE, key + ".%(ext)s"), format=("b[height<=?%s]/bv*[height<=?%s]+ba/b/bv*+ba" % (q, q)) if q.isdigit() else "b/bv*+ba",
                                 merge_output_format="mp4", http_headers=hdr, max_filesize=1_500_000_000)
                 with yt_dlp.YoutubeDL(opts) as y:
                     y.extract_info(media, download=True)
@@ -205,7 +205,7 @@ def prepare():
         if not path:
             opts = ydl_opts(
                 outtmpl=os.path.join(CACHE, key + ".%(ext)s"),
-                format="bv*[height<=720][ext=mp4][vcodec^=avc1]+ba[ext=m4a]/b[height<=720][ext=mp4]/bv*[height<=720]+ba/b[height<=720]/b",
+                format="bv*[height<=?720][ext=mp4][vcodec^=avc1]+ba[ext=m4a]/b[height<=?720][ext=mp4]/bv*[height<=?720]+ba/b[height<=?720]/b",
                 merge_output_format="mp4",
                 max_filesize=1_500_000_000,
             )
@@ -255,7 +255,7 @@ def watermark_filter(info):
     return "".join("[format_id!=%s]" % i for i in ids), bool(bad)
 
 def video_format(q, x):
-    h = "[height<=%s]" % q if q.isdigit() else ""
+    h = "[height<=?%s]" % q if q.isdigit() else ""
     x = h + x
     return "bv*%s[vcodec^=avc1]+ba[ext=m4a]/b%s[ext=mp4]/bv*%s+ba/b%s" % (x, x, x, x)
 

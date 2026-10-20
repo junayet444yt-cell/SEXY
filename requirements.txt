@@ -1,5 +1,5 @@
 flask
-yt-dlp[default,curl-cffi]
+yt-dlp
 requests
 imageio-ffmpeg
 gunicorn
