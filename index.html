@@ -76,6 +76,9 @@ h2{margin:0;font:600 18px 'Sora','Manrope',sans-serif}
 .toast.on{opacity:1}
 .dlrow{display:flex;flex-wrap:wrap;gap:10px;justify-content:center;align-items:center;margin-top:16px}
 .sel{background:var(--field);color:var(--ink);border:1px solid var(--line);border-radius:999px;padding:10px 14px;font:500 14px 'Manrope',sans-serif}
+.num{width:84px;background:var(--field);color:var(--ink);border:1px solid var(--line);border-radius:999px;padding:10px 14px;font:500 14px 'Manrope',sans-serif}
+.prog{height:8px;border-radius:99px;background:var(--field);border:1px solid var(--line);overflow:hidden;max-width:420px;margin:10px auto 0}
+.prog i{display:block;height:100%;width:0;background:var(--c);transition:width .3s}
 .dlmsg{text-align:center;margin:8px 0 0;font-size:14px;color:var(--mut)}
 [hidden]{display:none!important}
 @media (max-width:560px){.btn{padding:10px 16px}.search{border-radius:26px}.pastebtn{display:none}}
@@ -85,7 +88,7 @@ h2{margin:0;font:600 18px 'Sora','Manrope',sans-serif}
 <div class="wrap">
   <header>
     <div class="mark"><i></i></div>
-    <div class="brand"><img src="/icon-192.png" alt="" width="40" height="40" style="width:40px;height:40px;border-radius:50%;vertical-align:middle;margin-right:12px;-webkit-text-fill-color:initial;box-shadow:0 0 14px rgba(70,130,255,.55)">Eror</div>
+    <div class="brand">Eror</div>
     <div class="status" id="status">Checking server</div>
   </header>
 
@@ -102,11 +105,17 @@ h2{margin:0;font:600 18px 'Sora','Manrope',sans-serif}
       <select class="sel" id="q" aria-label="Download quality">
         <option value="best">Best quality (MP4)</option><option value="1080">1080p</option><option value="720">720p</option><option value="480">480p</option><option value="360">360p</option><option value="audio">Audio only (MP3)</option>
       </select>
+      <select class="sel" id="mode" aria-label="Download mode">
+        <option value="one">Single video</option><option value="channel">Whole channel / page / playlist</option>
+      </select>
+      <input class="num" id="lim" type="number" min="1" max="100" value="20" title="How many videos (latest first)" aria-label="How many videos" hidden>
       <button class="btn go" id="dlbtn" type="button">⬇ Download</button>
+      <button class="btn ghost danger" id="chCancel" type="button" hidden>Cancel</button>
     </div>
-    <p class="dlmsg" id="dlmsg">Paste a link from almost any site. If the site is not directly supported, Eror looks inside the page for the video file. TikTok copies with a watermark are skipped.</p>
+    <div class="prog" id="prog" hidden><i id="progBar"></i></div>
+    <p class="dlmsg" id="dlmsg">Download works for YouTube, TikTok, Instagram, Facebook, Reddit and more. Choose “Whole channel / page / playlist” to get many videos at once as one ZIP. TikTok copies with a watermark are skipped.</p>
     <div class="chips">
-      <span class="chip">YouTube</span><span class="chip">Vimeo</span><span class="chip">Dailymotion</span><span class="chip">Spotify</span><span class="chip">SoundCloud</span><span class="chip">Facebook</span><span class="chip">TikTok</span><span class="chip">Twitch</span><span class="chip">X (Twitter)</span><span class="chip">Instagram</span><span class="chip">Streamable</span><span class="chip">Google Drive</span><span class="chip">Loom</span><span class="chip">Bilibili</span><span class="chip">MP4 and MP3</span><span class="chip">HLS (m3u8)</span>
+      <span class="chip">YouTube</span><span class="chip">Vimeo</span><span class="chip">Dailymotion</span><span class="chip">Spotify</span><span class="chip">SoundCloud</span><span class="chip">Facebook</span><span class="chip">Reddit</span><span class="chip">TikTok</span><span class="chip">Twitch</span><span class="chip">X (Twitter)</span><span class="chip">Instagram</span><span class="chip">Streamable</span><span class="chip">Google Drive</span><span class="chip">Loom</span><span class="chip">Bilibili</span><span class="chip">MP4 and MP3</span><span class="chip">HLS (m3u8)</span>
     </div>
   </section>
 
@@ -310,10 +319,44 @@ function closeVideo(){
 $('#closeVid').onclick=closeVideo;
 document.addEventListener('keydown',e=>{if(e.key==='Escape'&&!bar.hidden&&document.activeElement!==inp)closeVideo()});
 const dlb=$('#dlbtn'),dlmsg=$('#dlmsg');
+const modeSel=$('#mode'),limIn=$('#lim'),prog=$('#prog'),progBar=$('#progBar'),chCancel=$('#chCancel');
+let chJob=null,chTimer=null;
+modeSel.onchange=()=>{const ch=modeSel.value==='channel';limIn.hidden=!ch;dlb.textContent=ch?'⬇ Download all':'⬇ Download'};
+function chStop(){clearInterval(chTimer);chTimer=null;chJob=null;dlb.disabled=false;dlb.textContent=modeSel.value==='channel'?'⬇ Download all':'⬇ Download';chCancel.hidden=true;setTimeout(()=>{if(!chJob)prog.hidden=true},4000)}
+chCancel.onclick=()=>{if(chJob){fetch('/api/channel/cancel?job='+chJob).catch(()=>{});dlmsg.textContent='Cancelling after the current video…'}};
+async function channelDownload(url){
+  dlb.disabled=true;dlb.textContent='Working…';chCancel.hidden=false;prog.hidden=false;progBar.style.width='3%';
+  dlmsg.textContent='Reading the list of videos…';
+  try{
+    const res=await fetch('/api/channel/start?url='+encodeURIComponent(url)+'&q='+$('#q').value+'&limit='+encodeURIComponent(limIn.value||20));
+    const d=await res.json();
+    if(!res.ok||d.error)throw new Error(d.error||'Failed');
+    chJob=d.job;
+    chTimer=setInterval(async()=>{
+      try{
+        const sr=await fetch('/api/channel/status?job='+chJob);const s=await sr.json();
+        if(!sr.ok||s.error){dlmsg.textContent=s.error||'Lost the job';chStop();return}
+        const pct=s.total?Math.round(100*(s.done+s.failed.length)/s.total):3;progBar.style.width=Math.max(3,pct)+'%';
+        if(s.status==='listing')dlmsg.textContent='Reading the list of videos…';
+        else if(s.status==='downloading')dlmsg.textContent=(s.title?s.title+': ':'')+(s.done+s.failed.length)+' / '+s.total+' done'+(s.failed.length?' ('+s.failed.length+' failed)':'')+(s.current?' — '+String(s.current).slice(0,70):'')+'. Keep this page open.';
+        else if(s.status==='zipping')dlmsg.textContent='Packing everything into one ZIP…';
+        else if(s.status==='done'||s.status==='cancelled'){
+          progBar.style.width='100%';
+          const a=document.createElement('a');a.href=s.zip+'?dl=1&name='+encodeURIComponent(s.title||'channel');a.download='';
+          document.body.appendChild(a);a.click();a.remove();
+          dlmsg.textContent='Done. ZIP download started: '+s.done+' video'+(s.done===1?'':'s')+(s.failed.length?', '+s.failed.length+' failed (listed in failed.txt inside the ZIP)':'')+'.';toast('ZIP download started');chStop();
+        }else if(s.status==='error'){dlmsg.textContent=s.error||'Failed';chStop()}
+      }catch(e){dlmsg.textContent='Cannot reach the Eror server. Make sure it is still running.';chStop()}
+    },2000);
+  }catch(e){
+    dlmsg.textContent=(e.message==='Failed to fetch'?'Cannot reach the Eror server. Make sure it is still running.':e.message);chStop();
+  }
+}
 dlb.onclick=async()=>{
   const r=detect(inp.value);
   if(!r){toast('Enter a valid link');return}
   if(!SERVER){dlmsg.textContent='Downloads need the Eror server. Open this page from start.bat or your server link.';return}
+  if(modeSel.value==='channel'){channelDownload(r.url);return}
   dlb.disabled=true;dlb.textContent='Preparing…';
   dlmsg.textContent='Getting your file. Long or HD videos can take a minute, please keep this page open.';
   try{

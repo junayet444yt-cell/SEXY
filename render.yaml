@@ -3,9 +3,6 @@ services:
     name: eror
     runtime: docker
     plan: free
-    healthCheckPath: /api/ping
     envVars:
       - key: EROR_PASSWORD
-        sync: false
-      - key: YTDLP_PROXY
         sync: false
