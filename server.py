@@ -8,8 +8,6 @@ CACHE = os.path.join(BASE, "cache")
 os.makedirs(CACHE, exist_ok=True)
 app = Flask(__name__)
 lock = threading.Lock()
-from concurrent.futures import ThreadPoolExecutor
-POOL = ThreadPoolExecutor(max_workers=4)
 STREAMS = {}
 PASSWORD = os.environ.get("EROR_PASSWORD")
 PROXY = os.environ.get("YTDLP_PROXY")  # optional, e.g. http://user:pass@host:port
@@ -45,9 +43,7 @@ def guard():
             return Response("Password required", 401, {"WWW-Authenticate": 'Basic realm="Eror"'})
 
 def ydl_opts(**extra):
-    o = {"quiet": True, "no_warnings": True, "noplaylist": True, "noprogress": True,
-         "socket_timeout": 12, "retries": 2, "fragment_retries": 3, "extractor_retries": 1,
-         "concurrent_fragment_downloads": 8, "http_chunk_size": 10485760}
+    o = {"quiet": True, "no_warnings": True, "noplaylist": True}
     if FFMPEG:
         o["ffmpeg_location"] = FFMPEG
     if PROXY:
@@ -114,17 +110,17 @@ def scrape(url, depth=0, referer=None):
                 continue
     return title, out
 
-def fallback(url, key, found, q="best", pre=None):
+def fallback(url, key, found):
     import yt_dlp
     try:
-        title, cands = pre.result(timeout=30) if pre else scrape(url)
+        title, cands = scrape(url)
     except Exception:
         return None
     for media, ref in cands[:5]:
         hdr = {"User-Agent": UA, "Referer": ref}
         try:
             if ".m3u8" in media.lower():
-                opts = ydl_opts(outtmpl=os.path.join(CACHE, key + ".%(ext)s"), format=("b[height<=?%s]/bv*[height<=?%s]+ba/b/bv*+ba" % (q, q)) if q.isdigit() else "b/bv*+ba",
+                opts = ydl_opts(outtmpl=os.path.join(CACHE, key + ".%(ext)s"), format="b/bv*+ba",
                                 merge_output_format="mp4", http_headers=hdr, max_filesize=1_500_000_000)
                 with yt_dlp.YoutubeDL(opts) as y:
                     y.extract_info(media, download=True)
@@ -170,17 +166,6 @@ def prepare():
     if not url.startswith(("http://", "https://")):
         return jsonify(error="Invalid URL"), 400
 
-    key = hashlib.sha1(url.encode()).hexdigest()[:16]
-    def found():
-        fs = [f for f in glob.glob(os.path.join(CACHE, key + ".*")) if not f.endswith((".part", ".ytdl"))]
-        return max(fs, key=os.path.getmtime) if fs else None
-
-    # Start scanning the page for a direct video file right now, in parallel, so that if yt-dlp
-    # does not know this site the answer is already waiting (skipped for the big known sites).
-    pre = None
-    if not re.search(r"(youtube\.com|youtu\.be|tiktok\.com|instagram\.com|facebook\.com|fb\.watch|twitter\.com|x\.com)", url, re.I):
-        pre = POOL.submit(scrape, url)
-
     # 1) Fast path: a plain file stream that can start playing immediately.
     try:
         with yt_dlp.YoutubeDL(ydl_opts(format="b[ext=mp4][protocol^=http]/b[protocol^=http]")) as y:
@@ -191,21 +176,21 @@ def prepare():
             if len(STREAMS) > 50:
                 STREAMS.pop(next(iter(STREAMS)))
             return jsonify(title=i.get("title"), src="/stream/%s.%s" % (tok, i.get("ext") or "mp4"))
-    except Exception as e:
-        # yt-dlp does not know this site: skip the slow second attempt and use the page scan right away.
-        if pre is not None and re.search(r"unsupported url", str(e), re.I):
-            fb = fallback(url, key, found, "720", pre)
-            if fb:
-                return jsonify(**fb)
+    except Exception:
+        pass
 
     # 2) Slow path: download and merge (needed for HLS and split video/audio).
+    key = hashlib.sha1(url.encode()).hexdigest()[:16]
+    def found():
+        fs = [f for f in glob.glob(os.path.join(CACHE, key + ".*")) if not f.endswith((".part", ".ytdl"))]
+        return max(fs, key=os.path.getmtime) if fs else None
     with lock:
         clean_old()
         path, title = found(), None
         if not path:
             opts = ydl_opts(
                 outtmpl=os.path.join(CACHE, key + ".%(ext)s"),
-                format="bv*[height<=?720][ext=mp4][vcodec^=avc1]+ba[ext=m4a]/b[height<=?720][ext=mp4]/bv*[height<=?720]+ba/b[height<=?720]/b",
+                format="bv*[ext=mp4][vcodec^=avc1]+ba[ext=m4a]/b[ext=mp4]/bv*+ba/b",
                 merge_output_format="mp4",
                 max_filesize=1_500_000_000,
             )
@@ -214,7 +199,7 @@ def prepare():
                     title = y.extract_info(url, download=True).get("title")
             except Exception as e:
                 err = str(e).replace("ERROR: ", "")[:300]
-                fb = fallback(url, key, found, "720", pre)
+                fb = fallback(url, key, found)
                 if fb:
                     return jsonify(**fb)
                 return jsonify(error=err), 422
@@ -222,26 +207,6 @@ def prepare():
     if not path:
         return jsonify(error="Nothing could be downloaded from this link"), 422
     return jsonify(title=title, src="/media/" + os.path.basename(path))
-
-def direct_format(info, q):
-    """If one plain video+audio file is already the best available, return it so it can be streamed straight
-    to the user with no server-side download. Returns None when separate/merged streams give better quality."""
-    cap = int(q) if q.isdigit() else 10**6
-    fmts = [f for f in (info.get("formats") or []) if f.get("url") and f.get("vcodec") != "none"
-            and (f.get("height") or 0) <= cap]
-    if not fmts:
-        return None
-    top = max((f.get("height") or 0) for f in fmts)
-    prog = [f for f in fmts if str(f.get("protocol", "")).startswith("http") and f.get("acodec") != "none"
-            and f.get("ext") in ("mp4", "webm") and not f.get("fragments")]
-    if not prog:
-        return None
-    best = max(prog, key=lambda f: ((f.get("height") or 0), f.get("ext") == "mp4", f.get("tbr") or 0))
-    if (best.get("height") or 0) < top:
-        return None
-    best = dict(best)
-    best["http_headers"] = best.get("http_headers") or info.get("http_headers") or {}
-    return best
 
 SIZES = ("best", "1080", "720", "480", "360", "audio")
 
@@ -255,7 +220,7 @@ def watermark_filter(info):
     return "".join("[format_id!=%s]" % i for i in ids), bool(bad)
 
 def video_format(q, x):
-    h = "[height<=?%s]" % q if q.isdigit() else ""
+    h = "[height<=%s]" % q if q.isdigit() else ""
     x = h + x
     return "bv*%s[vcodec^=avc1]+ba[ext=m4a]/b%s[ext=mp4]/bv*%s+ba/b%s" % (x, x, x, x)
 
@@ -281,14 +246,6 @@ def download():
                     info = y.extract_info(url, download=False)
                 title = info.get("title")
                 excl, had_wm = watermark_filter(info)
-                if q != "audio" and not had_wm:
-                    d = direct_format(info, q)
-                    if d:  # fastest path: no server download, the file streams straight to the user
-                        tok = uuid.uuid4().hex[:16]
-                        STREAMS[tok] = (d["url"], d["http_headers"])
-                        if len(STREAMS) > 50:
-                            STREAMS.pop(next(iter(STREAMS)))
-                        return jsonify(title=title, src="/stream/%s.%s" % (tok, d.get("ext") or "mp4"))
                 opts = ydl_opts(outtmpl=os.path.join(CACHE, key + ".%(ext)s"), playlist_items="1",
                                 max_filesize=1_500_000_000)
                 if q == "audio":
@@ -297,15 +254,11 @@ def download():
                 else:
                     opts.update(format=video_format(q, excl), merge_output_format="mp4")
                 with yt_dlp.YoutubeDL(opts) as y:
-                    try:
-                        y.process_ie_result(info, download=True)  # reuse the info we already have: no second lookup
-                    except Exception:
-                        y.download([url])
+                    y.download([url])
             except Exception as e:
                 err = str(e).replace("ERROR: ", "")[:300]
                 if not had_wm:
-                    # yt-dlp doesn't know this site: look inside the page for the real video file.
-                    fb = fallback(url, key, found, q)
+                    fb = fallback(url, key, found)
                     if fb:
                         return jsonify(**fb)
                 if had_wm and "format is not available" in err.lower():
@@ -360,7 +313,6 @@ def pwa_files():
         resp.headers["Cache-Control"] = "no-cache"
     return resp
 
-# Keep-alive: free hosts (Render) sleep after ~15 min without visits. This pings our own public link every 10 min.
 def _keepalive():
     url = os.environ.get("RENDER_EXTERNAL_URL") or os.environ.get("KEEPALIVE_URL")
     if not url:

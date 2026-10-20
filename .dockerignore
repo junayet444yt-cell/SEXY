@@ -1,0 +1,5 @@
+cache
+cookies.txt
+*.bat
+*.zip
+__pycache__
