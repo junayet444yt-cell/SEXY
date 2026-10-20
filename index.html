@@ -1,0 +1,343 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Eror – Any link, one player</title>
+<link rel="manifest" href="/manifest.webmanifest">
+<meta name="theme-color" content="#07060f">
+<link rel="apple-touch-icon" href="/icon-192.png">
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700&family=Sora:wght@600;700&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#07060f;--field:#120f22;--card:rgba(255,255,255,.05);--ink:#f4f2ff;--mut:#a5a2c2;--p:#8b5cf6;--p2:#ec4899;--c:#22d3ee;--line:rgba(180,160,255,.17);--glow:rgba(139,92,246,.35);--shadow:0 40px 90px -30px rgba(0,0,0,.85);--grad:linear-gradient(120deg,#8b5cf6,#ec4899 55%,#f59e0b);--ontext:#fff;
+box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:light){:root:not([data-theme="dark"]){--bg:#f4f3fb;--field:#fff;--card:rgba(255,255,255,.7);--ink:#17132b;--mut:#6d6888;--p:#7c3aed;--line:rgba(90,70,160,.18);--glow:rgba(124,58,237,.25);--shadow:0 30px 70px -30px rgba(60,30,140,.45)}}
+*{box-sizing:border-box}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+body{margin:0;min-height:100vh;background:var(--bg);color:var(--ink);font:400 16px/1.65 'Manrope',system-ui,sans-serif;position:relative;overflow-x:hidden}
+body::before{content:"";position:fixed;inset:-20%;z-index:-1;pointer-events:none;background:radial-gradient(520px 420px at 15% 10%,rgba(139,92,246,.42),transparent 70%),radial-gradient(480px 400px at 88% 22%,rgba(236,72,153,.30),transparent 70%),radial-gradient(560px 460px at 55% 98%,rgba(34,211,238,.22),transparent 70%);animation:drift 18s ease-in-out infinite alternate}
+@keyframes drift{to{transform:translate3d(-3%,3%,0) scale(1.08)}}
+.wrap{max-width:980px;margin:0 auto;padding:22px 20px 56px}
+header{display:flex;align-items:center;gap:12px}
+.mark{width:40px;height:40px;border-radius:12px;background:var(--grad);display:grid;place-items:center;box-shadow:0 8px 26px -6px var(--glow),inset 0 0 0 1px rgba(255,255,255,.25)}
+.mark i{display:block;width:0;height:0;border-left:12px solid #fff;border-top:7px solid transparent;border-bottom:7px solid transparent;margin-left:3px}
+.brand{font:700 28px/1 'Sora','Manrope',sans-serif;letter-spacing:.14em;background:var(--grad);-webkit-background-clip:text;background-clip:text;color:transparent}
+.hero{text-align:center;margin:44px 0 26px}
+h1{margin:0 0 10px;font:700 clamp(30px,5.8vw,54px)/1.12 'Sora','Manrope',sans-serif;letter-spacing:-.02em;background:linear-gradient(100deg,var(--ink) 25%,#c4b5fd 60%,var(--p2) 100%);-webkit-background-clip:text;background-clip:text;color:transparent}
+.sub{margin:0 auto;max-width:520px;color:var(--mut)}
+.search{display:flex;gap:8px;align-items:center;padding:8px;margin-top:28px;border:1.5px solid transparent;border-radius:999px;background:linear-gradient(var(--field),var(--field)) padding-box,linear-gradient(120deg,#8b5cf6,#ec4899,#22d3ee,#8b5cf6) border-box;background-size:100% 100%,300% 300%;box-shadow:var(--shadow),0 0 50px -14px var(--glow);animation:flow 9s linear infinite}
+@keyframes flow{to{background-position:0 0,300% 0}}
+.search:focus-within{box-shadow:var(--shadow),0 0 60px -6px var(--glow)}
+input{flex:1;min-width:0;background:none;border:0;outline:0;color:var(--ink);font:inherit;padding:0 14px}
+input::placeholder{color:var(--mut)}
+.clearx{flex:none;width:30px;height:30px;border:0;border-radius:50%;background:rgba(160,150,220,.2);color:var(--ink);font-size:14px;line-height:1;cursor:pointer;display:grid;place-items:center;transition:background .15s,transform .15s}
+.clearx:hover{background:var(--p2);color:#fff;transform:rotate(90deg)}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;border:0;border-radius:999px;padding:11px 22px;font:600 15px/1.2 'Manrope',sans-serif;cursor:pointer;text-decoration:none;white-space:nowrap;transition:transform .15s,filter .15s,border-color .15s,background .15s}
+.btn:focus-visible,.clearx:focus-visible{outline:2px solid var(--c);outline-offset:2px}
+.go{background:var(--grad);color:var(--ontext);box-shadow:0 10px 28px -8px rgba(236,72,153,.65)}
+.go:hover{filter:brightness(1.1);transform:translateY(-1px)}
+.ghost{background:var(--card);border:1px solid var(--line);color:var(--ink);padding:9px 16px;font-weight:500;font-size:14px;-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px)}
+.ghost:hover{border-color:var(--p);background:rgba(139,92,246,.16)}
+.danger:hover{border-color:#f43f5e;background:rgba(244,63,94,.18);color:#fda4af}
+.chips{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin-top:20px}
+.chip{font-size:13px;padding:3px 14px;border:1px solid var(--line);border-radius:999px;color:var(--mut);background:var(--card);transition:all .2s}
+.chip:hover{color:var(--ink);border-color:var(--c);box-shadow:0 0 18px -4px var(--c)}
+.stage{position:relative;margin:34px auto 0;width:100%;aspect-ratio:16/9;background:#000;border-radius:24px;overflow:hidden;border:1px solid var(--line);box-shadow:var(--shadow),0 0 0 7px var(--card),0 0 90px -20px var(--glow)}
+.stage iframe,.stage video{position:absolute;inset:0;width:100%;height:100%;border:0;background:#000}
+.empty{position:absolute;inset:0;display:grid;place-items:center;text-align:center;color:#9a95b8;padding:24px;background:radial-gradient(circle at 50% 35%,#2a1a4d,#07050f)}
+.empty b{display:block;background:var(--grad);-webkit-background-clip:text;background-clip:text;color:transparent;font:700 20px 'Sora','Manrope',sans-serif;margin-bottom:4px}
+.aud{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:20px;padding:20px;background:radial-gradient(circle at 50% 38%,#2b1650,#07050f)}
+.disc{position:relative;width:150px;height:150px;border-radius:50%;background:conic-gradient(#8b5cf6,#ec4899,#22d3ee,#8b5cf6);box-shadow:0 0 70px -8px rgba(236,72,153,.55);animation:spin 6s linear infinite;animation-play-state:paused}
+.disc::after{content:"";position:absolute;inset:38%;border-radius:50%;background:#0a0716;border:3px solid #fff}
+.playing .disc{animation-play-state:running}
+.atitle{color:#ece8ff;font-size:15px;max-width:90%;text-align:center;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+audio{width:min(88%,540px)}
+@keyframes spin{to{transform:rotate(1turn)}}
+@media (prefers-reduced-motion:reduce){.disc,.search,body::before{animation:none}}
+.count{display:block;font:700 76px/1.1 'Sora','Manrope',sans-serif;background:var(--grad);-webkit-background-clip:text;background-clip:text;color:transparent;margin:10px 0}
+.status{margin-left:auto;display:flex;align-items:center;gap:8px;font-size:13px;color:var(--mut);text-align:right;padding:5px 12px;border:1px solid var(--line);border-radius:999px;background:var(--card)}
+.status::before{content:"";flex:none;width:8px;height:8px;border-radius:50%;background:#f43f5e;box-shadow:0 0 10px #f43f5e}
+.status.on::before{background:#34d399;box-shadow:0 0 10px #34d399}
+.bar{display:flex;flex-wrap:wrap;gap:10px;align-items:center;justify-content:space-between;margin-top:18px}
+.badge{display:inline-flex;align-items:center;gap:8px;font-weight:600}
+.badge::before{content:"";width:9px;height:9px;border-radius:50%;background:var(--c);box-shadow:0 0 12px var(--c)}
+.acts{display:flex;flex-wrap:wrap;gap:8px}
+.hint{margin:8px 0 0;font-size:14px;color:var(--mut)}
+.histbox{margin-top:40px}
+.histhead{display:flex;justify-content:space-between;align-items:center}
+h2{margin:0;font:600 18px 'Sora','Manrope',sans-serif}
+.list{display:grid;gap:8px;margin-top:12px}
+.item{display:flex;justify-content:space-between;gap:16px;align-items:center;text-align:left;width:100%;padding:12px 16px;border:1px solid var(--line);border-radius:16px;background:var(--card);color:var(--ink);font:inherit;cursor:pointer;transition:all .2s}
+.item:hover{border-color:var(--p);transform:translateX(3px);box-shadow:0 0 24px -8px var(--glow)}
+.item small{color:var(--mut);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0}
+.item span{white-space:nowrap;font-weight:600}
+.note{margin:44px auto 0;max-width:620px;text-align:center;font-size:13px;color:var(--mut)}
+.toast{position:fixed;left:50%;bottom:calc(24px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--grad);color:#fff;padding:10px 20px;border-radius:999px;font-size:14px;font-weight:600;opacity:0;pointer-events:none;transition:opacity .25s;box-shadow:0 12px 30px -8px rgba(236,72,153,.6)}
+.toast.on{opacity:1}
+.dlrow{display:flex;flex-wrap:wrap;gap:10px;justify-content:center;align-items:center;margin-top:16px}
+.sel{background:var(--field);color:var(--ink);border:1px solid var(--line);border-radius:999px;padding:10px 14px;font:500 14px 'Manrope',sans-serif}
+.dlmsg{text-align:center;margin:8px 0 0;font-size:14px;color:var(--mut)}
+[hidden]{display:none!important}
+@media (max-width:560px){.btn{padding:10px 16px}.search{border-radius:26px}.pastebtn{display:none}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="mark"><i></i></div>
+    <div class="brand"><img src="/icon-192.png" alt="" width="40" height="40" style="width:40px;height:40px;border-radius:50%;vertical-align:middle;margin-right:12px;-webkit-text-fill-color:initial;box-shadow:0 0 14px rgba(70,130,255,.55)">Eror</div>
+    <div class="status" id="status">Checking server</div>
+  </header>
+
+  <section class="hero">
+    <h1>Any link. One premium player.</h1>
+    <p class="sub">Paste a video, audio or post link and watch it right here.</p>
+    <div class="search">
+      <input id="url" type="text" inputmode="url" autocomplete="off" spellcheck="false" placeholder="Paste a link or embed code here" aria-label="Video, audio or post link">
+      <button class="clearx" id="clearUrl" type="button" aria-label="Clear link" title="Clear link" hidden>✕</button>
+      <button class="btn ghost pastebtn" id="paste" type="button">Paste</button>
+      <button class="btn go" id="go" type="button">Play</button>
+    </div>
+    <div class="dlrow">
+      <select class="sel" id="q" aria-label="Download quality">
+        <option value="best">Best quality (MP4)</option><option value="1080">1080p</option><option value="720">720p</option><option value="480">480p</option><option value="360">360p</option><option value="audio">Audio only (MP3)</option>
+      </select>
+      <button class="btn go" id="dlbtn" type="button">⬇ Download</button>
+    </div>
+    <p class="dlmsg" id="dlmsg">Paste a link from almost any site. If the site is not directly supported, Eror looks inside the page for the video file. TikTok copies with a watermark are skipped.</p>
+    <div class="chips">
+      <span class="chip">YouTube</span><span class="chip">Vimeo</span><span class="chip">Dailymotion</span><span class="chip">Spotify</span><span class="chip">SoundCloud</span><span class="chip">Facebook</span><span class="chip">TikTok</span><span class="chip">Twitch</span><span class="chip">X (Twitter)</span><span class="chip">Instagram</span><span class="chip">Streamable</span><span class="chip">Google Drive</span><span class="chip">Loom</span><span class="chip">Bilibili</span><span class="chip">MP4 and MP3</span><span class="chip">HLS (m3u8)</span>
+    </div>
+  </section>
+
+  <div class="stage" id="stage">
+    <div class="empty"><div><b>Your link plays here</b>Paste a URL above and press “Play”.</div></div>
+  </div>
+
+  <div class="bar" id="bar" hidden>
+    <div class="badge" id="badge"></div>
+    <div class="acts">
+      <a class="btn ghost" id="dl" hidden download>Download</a>
+      <button class="btn ghost" id="fs" type="button">Fullscreen</button>
+      <button class="btn ghost" id="copy" type="button">Copy link</button>
+      <a class="btn ghost" id="open" target="_blank" rel="noopener noreferrer">Open in new tab</a>
+      <button class="btn ghost danger" id="closeVid" type="button">✕ Close video</button>
+    </div>
+  </div>
+  <p class="hint" id="hint"></p>
+
+  <section class="histbox" id="histBox" hidden>
+    <div class="histhead"><h2>Recent</h2><button class="btn ghost" id="clear" type="button">Clear</button></div>
+    <div class="list" id="histList"></div>
+  </section>
+
+  <p class="note">Some sites do not allow their content to play on other websites. If the player stays blank, use “Open in new tab”, or copy the site’s Embed code (the iframe snippet) and paste it into the box above.</p>
+</div>
+<div class="toast" id="toast" role="status"></div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/hls.js/1.5.17/hls.min.js"></script>
+<script>
+const $=s=>document.querySelector(s);
+const stage=$('#stage'),inp=$('#url'),bar=$('#bar'),hint=$('#hint'),badge=$('#badge'),openA=$('#open'),histBox=$('#histBox'),histList=$('#histList'),toastEl=$('#toast');
+let cur=null,hls=null,ctl=null;
+const EMPTY='<div class="empty"><div><b>Your link plays here</b>Paste a URL above and press “Play”.</div></div>';
+const KEY='eror_history';
+const load=()=>{try{return JSON.parse(localStorage.getItem(KEY)||'[]')}catch(e){return[]}};
+const save=v=>{try{localStorage.setItem(KEY,JSON.stringify(v))}catch(e){}};
+function toast(t){toastEl.textContent=t;toastEl.classList.add('on');clearTimeout(toast.t);toast.t=setTimeout(()=>toastEl.classList.remove('on'),2400)}
+const yt=id=>({kind:'iframe',label:'YouTube',src:'https://www.youtube-nocookie.com/embed/'+id+'?autoplay=1&rel=0'});
+
+function detect(raw){
+  let s=raw.trim(); const fm=s.match(/<iframe[^>]*?\ssrc\s*=\s*["']([^"']+)["']/i); if(fm) s=fm[1].trim().replace(/&amp;/g,'&'); if(s.startsWith('//')) s='https:'+s; if(!s) return null;
+  if(!/^[a-z]+:\/\//i.test(s)) s='https://'+s;
+  let u; try{u=new URL(s)}catch(e){return null}
+  if(!/^https?:$/.test(u.protocol)||(!u.hostname.includes('.')&&u.hostname!=='localhost')) return null;
+  const h=u.hostname.replace(/^(www|m|music)\./,''),p=u.pathname,q=u.searchParams;
+  let m,r=null;
+  if(h==='youtu.be'&&p.length>1) r=yt(p.slice(1).split('/')[0]);
+  else if(h==='youtube.com'||h==='youtube-nocookie.com'){
+    if(p==='/watch'&&q.get('v')) r=yt(q.get('v'));
+    else if(m=p.match(/^\/(shorts|embed|live|v)\/([\w-]{6,})/)) r=yt(m[2]);
+    else if(p==='/playlist'&&q.get('list')) r={kind:'iframe',label:'YouTube playlist',src:'https://www.youtube-nocookie.com/embed/videoseries?list='+encodeURIComponent(q.get('list'))};
+  }
+  else if(h==='vimeo.com'&&(m=p.match(/\/(\d{5,})/))) r={kind:'iframe',label:'Vimeo',src:'https://player.vimeo.com/video/'+m[1]+'?autoplay=1'};
+  else if(h==='dailymotion.com'&&(m=p.match(/\/video\/(\w+)/))) r={kind:'iframe',label:'Dailymotion',src:'https://www.dailymotion.com/embed/video/'+m[1]+'?autoplay=1'};
+  else if(h==='dai.ly'&&p.length>1) r={kind:'iframe',label:'Dailymotion',src:'https://www.dailymotion.com/embed/video/'+p.slice(1)+'?autoplay=1'};
+  else if(h==='open.spotify.com'&&(m=p.match(/^\/(?:intl-[a-z]+\/)?(track|album|playlist|episode|show|artist)\/(\w+)/))) r={kind:'iframe',label:'Spotify',src:'https://open.spotify.com/embed/'+m[1]+'/'+m[2],h:'380px'};
+  else if(h==='soundcloud.com'&&p.split('/').filter(Boolean).length>=2) r={kind:'iframe',label:'SoundCloud',src:'https://w.soundcloud.com/player/?url='+encodeURIComponent(u.href)+'&auto_play=true&visual=true',h:'380px'};
+  else if(h==='twitch.tv'){
+    if(m=p.match(/^\/videos\/(\d+)/)) r={kind:'iframe',label:'Twitch',src:'https://player.twitch.tv/?video=v'+m[1]+'&parent='+location.hostname+'&autoplay=true'};
+    else if(m=p.match(/^\/(\w+)\/?$/)) r={kind:'iframe',label:'Twitch live',src:'https://player.twitch.tv/?channel='+m[1]+'&parent='+location.hostname+'&autoplay=true'};
+  }
+  else if(h==='facebook.com'||h.endsWith('.facebook.com')||h==='fb.watch') r={kind:'iframe',label:'Facebook',src:'https://www.facebook.com/plugins/video.php?href='+encodeURIComponent(u.href)+'&show_text=false&autoplay=true'};
+  else if(h==='tiktok.com'&&(m=p.match(/\/video\/(\d+)/))) r={kind:'iframe',label:'TikTok',src:'https://www.tiktok.com/embed/v2/'+m[1],narrow:true};
+  else if((h==='twitter.com'||h==='x.com'||h==='mobile.twitter.com')&&(m=p.match(/\/status(?:es)?\/(\d+)/))) r={kind:'iframe',label:'X (Twitter)',src:'https://platform.twitter.com/embed/Tweet.html?id='+m[1]+'&dnt=true',h:'640px',maxw:'550px'};
+  else if(h==='instagram.com'&&(m=p.match(/^\/(?:[\w.]+\/)?(p|reel|reels|tv)\/([\w-]+)/))) r={kind:'iframe',label:'Instagram',src:'https://www.instagram.com/'+(m[1]==='reels'?'reel':m[1])+'/'+m[2]+'/embed/',h:'720px',maxw:'540px'};
+  else if(h==='streamable.com'&&(m=p.match(/^\/(?:e\/)?(\w+)/))) r={kind:'iframe',label:'Streamable',src:'https://streamable.com/e/'+m[1]};
+  else if(h==='drive.google.com'&&(m=p.match(/\/file\/d\/([\w-]+)/))) r={kind:'iframe',label:'Google Drive',src:'https://drive.google.com/file/d/'+m[1]+'/preview'};
+  else if(h==='loom.com'&&(m=p.match(/\/(?:share|embed)\/(\w+)/))) r={kind:'iframe',label:'Loom',src:'https://www.loom.com/embed/'+m[1]};
+  else if(h==='bilibili.com'&&(m=p.match(/\/video\/(BV\w+)/i))) r={kind:'iframe',label:'Bilibili',src:'https://player.bilibili.com/player.html?bvid='+m[1]+'&autoplay=1'};
+  else if(h==='archive.org'&&(m=p.match(/^\/details\/([^\/]+)/))) r={kind:'iframe',label:'Internet Archive',src:'https://archive.org/embed/'+m[1]};
+  if(!r){
+    if(/\.m3u8$/i.test(p)) r={kind:'hls',label:'Live stream (HLS)'};
+    else if(/\.(mp4|webm|ogv|mov|m4v)$/i.test(p)) r={kind:'video',label:'Video file'};
+    else if(/\.(mp3|wav|m4a|aac|flac|oga|ogg|opus)$/i.test(p)) r={kind:'audio',label:'Audio file'};
+    else r={kind:'iframe',label:h,src:u.href,generic:true};
+  }
+  r.url=u.href; return r;
+}
+
+function fail(){
+  if(hls){hls.destroy();hls=null}
+  stage.innerHTML='<div class="empty"><div><b>This link could not be played</b>The site may block playback elsewhere, or the file may no longer exist. Try “Open in new tab”.</div></div>';
+}
+
+function play(raw,opt){
+  job++;clearInterval(tick);if(ctl){ctl.abort();ctl=null}
+  const r=detect(raw);
+  if(!r){toast('Enter a valid link');return}
+  cur=r;r.orig=opt&&opt.orig; if(opt&&opt.title)r.label=opt.title; if(hls){hls.destroy();hls=null}
+  if(SERVER&&r.generic&&!opt){serverPlay(r);return}
+  stage.innerHTML='';stage.style.height='';stage.style.maxWidth='';stage.style.aspectRatio='16/9';
+  if(r.h){stage.style.aspectRatio='auto';stage.style.height=r.h}
+  if(r.narrow){stage.style.aspectRatio='9/16';stage.style.maxWidth='360px'}
+  if(r.maxw)stage.style.maxWidth=r.maxw;
+  let el;
+  if(r.kind==='iframe'){
+    el=document.createElement('iframe');el.src=r.src;el.title=r.label;el.allowFullscreen=true;
+    el.allow='autoplay; fullscreen; picture-in-picture; encrypted-media; clipboard-write';
+    el.referrerPolicy='strict-origin-when-cross-origin';
+  }else if(r.kind==='audio'){
+    el=document.createElement('div');el.className='aud';
+    el.innerHTML='<div class="disc"></div><div class="atitle"></div>';
+    let name=r.url.split('/').pop().split('?')[0];try{name=decodeURIComponent(name)}catch(e){}
+    el.querySelector('.atitle').textContent=name||r.label;
+    const a=document.createElement('audio');a.controls=true;a.autoplay=true;a.src=r.url;
+    a.onplay=()=>el.classList.add('playing');a.onpause=a.onended=()=>el.classList.remove('playing');a.onerror=fail;
+    el.appendChild(a);
+  }else{
+    el=document.createElement('video');el.controls=true;el.autoplay=true;el.playsInline=true;el.onerror=fail;
+    if(r.kind==='hls'){
+      if(window.Hls&&Hls.isSupported()){hls=new Hls();hls.loadSource(r.url);hls.attachMedia(el);hls.on(Hls.Events.ERROR,(e,d)=>{if(d.fatal)fail()})}
+      else if(el.canPlayType('application/vnd.apple.mpegurl')) el.src=r.url;
+      else{fail();return}
+    }else el.src=r.url;
+  }
+  stage.appendChild(el);
+  bar.hidden=false;badge.textContent=r.label;openA.href=r.orig||r.url;
+  const dl=$('#dl');
+  if(opt&&opt.dl){dl.href=opt.dl;dl.removeAttribute('target');dl.hidden=false}
+  else if(r.kind==='video'||r.kind==='audio'){dl.href=r.url;dl.target='_blank';dl.rel='noopener noreferrer';dl.hidden=false}
+  else dl.hidden=true;
+  hint.textContent=r.generic?'This site is not natively supported, so Eror tried to load it directly. If the player stays blank, the site blocks embedding. Paste the site’s Embed code instead, or use “Open in new tab”.':'';
+  if(!opt)remember(r);
+  stage.scrollIntoView({behavior:'smooth',block:'center'});
+}
+
+let SERVER=false,job=0,tick=null;
+async function serverPlay(r){
+  const my=++job;clearInterval(tick);
+  stage.innerHTML='<div class="empty"><div><b>Finding your video</b><span class="count" id="count">10</span><span id="cl">seconds until your video starts</span></div></div>';
+  stage.style.aspectRatio='16/9';stage.style.height='';stage.style.maxWidth='';
+  bar.hidden=false;badge.textContent=r.label;openA.href=r.url;hint.textContent='';
+  $('#dl').hidden=true;
+  remember(r);
+  let left=10,ready=false;
+  const wait=new Promise(done=>{
+    tick=setInterval(()=>{
+      left--;
+      const c=$('#count');if(c)c.textContent=Math.max(left,0);
+      if(left<=0){
+        clearInterval(tick);
+        if(!ready){const l=$('#cl');if(l)l.textContent='Almost ready, still fetching your video';}
+        done();
+      }
+    },1000);
+  });
+  try{
+    ctl=new AbortController();
+    const res=await fetch('/api/prepare?url='+encodeURIComponent(r.url),{signal:ctl.signal});
+    const d=await res.json();
+    if(!res.ok||d.error)throw new Error(d.error||'Failed');
+    ready=true;
+    await wait;
+    if(my!==job)return;
+    play(location.origin+d.src,{title:d.title||r.label,orig:r.url,dl:d.src+'?dl=1&name='+encodeURIComponent(d.title||'video')});
+  }catch(e){
+    if(my!==job)return;
+    clearInterval(tick);
+    stage.innerHTML='<div class="empty"><div><b>This link could not be prepared</b><span></span></div></div>';
+    stage.querySelector('span').textContent=(e.message==='Failed to fetch'?'Cannot reach the Eror server. Make sure it is still running.':e.message)+(/403|429|forbidden|captcha|cloudflare|sign in|bot/i.test(e.message)?' This site may be blocking the server. Servers in data centers are often blocked, running Eror on your own PC works better.':'');
+  }
+}
+function remember(r){const v=load().filter(x=>x.url!==r.url);v.unshift({url:r.url,label:r.label});save(v.slice(0,8));renderHist()}
+function renderHist(){
+  const v=load();histBox.hidden=!v.length;histList.innerHTML='';
+  v.forEach(x=>{
+    const b=document.createElement('button');b.type='button';b.className='item';
+    const s=document.createElement('span');s.textContent=x.label;
+    const u=document.createElement('small');u.textContent=x.url.replace(/^https?:\/\/(www\.)?/,'');
+    b.append(s,u);b.onclick=()=>{inp.value=x.url;syncClr();play(x.url)};histList.appendChild(b);
+  });
+}
+
+$('#go').onclick=()=>play(inp.value);
+inp.addEventListener('keydown',e=>{if(e.key==='Enter')play(inp.value)});
+$('#paste').onclick=()=>{
+  try{navigator.clipboard.readText().then(t=>{inp.value=t;syncClr();play(t)}).catch(()=>toast('Press and hold in the box to paste'))}
+  catch(e){toast('Press and hold in the box to paste')}
+};
+$('#fs').onclick=()=>{try{(stage.requestFullscreen||stage.webkitRequestFullscreen).call(stage)}catch(e){toast('Fullscreen is not supported on this device')}};
+$('#copy').onclick=()=>{
+  if(!cur)return;
+  try{navigator.clipboard.writeText(cur.orig||cur.url).then(()=>toast('Link copied'),()=>toast('Could not copy'))}
+  catch(e){toast('Could not copy')}
+};
+$('#clear').onclick=()=>{save([]);renderHist()};
+const clr=$('#clearUrl');
+function syncClr(){clr.hidden=!inp.value}
+inp.addEventListener('input',syncClr);
+clr.onclick=()=>{inp.value='';syncClr();inp.focus()};
+function closeVideo(){
+  job++;clearInterval(tick);
+  if(ctl){ctl.abort();ctl=null}
+  if(hls){hls.destroy();hls=null}
+  stage.querySelectorAll('video,audio').forEach(m=>{try{m.pause();m.removeAttribute('src');m.load()}catch(e){}});
+  try{if(document.fullscreenElement)document.exitFullscreen()}catch(e){}
+  stage.innerHTML=EMPTY;stage.style.height='';stage.style.maxWidth='';stage.style.aspectRatio='16/9';
+  bar.hidden=true;hint.textContent='';cur=null;$('#dl').hidden=true;
+}
+$('#closeVid').onclick=closeVideo;
+document.addEventListener('keydown',e=>{if(e.key==='Escape'&&!bar.hidden&&document.activeElement!==inp)closeVideo()});
+const dlb=$('#dlbtn'),dlmsg=$('#dlmsg');
+dlb.onclick=async()=>{
+  const r=detect(inp.value);
+  if(!r){toast('Enter a valid link');return}
+  if(!SERVER){dlmsg.textContent='Downloads need the Eror server. Open this page from start.bat or your server link.';return}
+  dlb.disabled=true;dlb.textContent='Preparing…';
+  dlmsg.textContent='Getting your file. Long or HD videos can take a minute, please keep this page open.';
+  try{
+    const res=await fetch('/api/download?url='+encodeURIComponent(r.url)+'&q='+$('#q').value);
+    const d=await res.json();
+    if(!res.ok||d.error)throw new Error(d.error||'Failed');
+    const a=document.createElement('a');a.href=d.src+'?dl=1&name='+encodeURIComponent(d.title||'video');a.download='';
+    document.body.appendChild(a);a.click();a.remove();
+    dlmsg.textContent='Done. Your download has started'+(d.title?': '+d.title:'')+'.';toast('Download started');
+  }catch(e){
+    dlmsg.textContent=(e.message==='Failed to fetch'?'Cannot reach the Eror server. Make sure it is still running.':e.message);
+  }finally{dlb.disabled=false;dlb.textContent='⬇ Download'}
+};
+if('serviceWorker' in navigator)navigator.serviceWorker.register('/sw.js').catch(()=>{});
+renderHist();
+(function(){
+  const st=$('#status');
+  fetch('/api/health').then(r=>{if(!r.ok)throw 0;return r.json()}).then(h=>{
+    SERVER=true;st.classList.add('on');st.textContent='Server connected';
+    st.title='yt-dlp '+h.ytdlp+(h.ffmpeg?', ffmpeg ready':', ffmpeg missing');
+  }).catch(()=>{
+    st.textContent='No server. Open this page from start.bat or your server link, not by double-clicking index.html.';
+  });
+})();
+</script>
+</body>
+</html>
